@@ -13,11 +13,7 @@ var planSchema = new mongoose.Schema({
 planSchema.methods.getUsers = function (done) {
     this.model('UserPlan')
         .count({plan: this._id, active: true})
-        .exec(function (err, userCount) {
-            if (err) return done(err);
-
-            done();
-        });
+        .exec(done);
 };
 
 module.exports = mongoose.model('Plan', planSchema);
