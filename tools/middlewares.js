@@ -1,4 +1,11 @@
 module.exports = {
+    setHeaders: function (req, res, next) {
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Headers", "X-Requested-With, X-Cub-AuthToken, Content-Type");
+        res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+
+        next();
+    },
     parseLimitDate: function (req, res, next) {
         var limitDate = new Date();
         var nMonth = parseInt(req.params.nMonth, 10) - 1;

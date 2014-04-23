@@ -1,10 +1,12 @@
 var express = require('express');
 var mongoose = require('mongoose');
+var async = require('async');
 
 var utils = require('../tools/Utils');
 var mw = require('../tools/middlewares');
 
-var User = require('../models/User');
+var User = require('../models/User'),
+    Plan = require('../models/Plan');
 
 var router = express.Router();
 
@@ -41,4 +43,21 @@ router.get('/total/:nMonth?', mw.parseLimitDate, function (req, res) {
         });
 });
 
+/*
+router.get('/plans', function (req, res) {
+    Plan.find({}, function (err, plans) {
+        if (err) return res.send(500);
+
+        var planQueries = plans.map(function (plan) {
+            return function (callback) {
+                plan.getUsers(callback);
+            };
+        });
+
+        async.parallel(planQueries, function (err, results) {
+
+        });
+    });
+});
+*/
 module.exports = router;

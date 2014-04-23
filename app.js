@@ -9,6 +9,7 @@ var mongoose = require('mongoose');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
+var mw = require('./tools/middlewares');
 var cfg = require('./config');
 
 var app = express();
@@ -23,6 +24,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(mw.setHeaders);
 
 app.use('/', routes);
 app.use('/users', users);
