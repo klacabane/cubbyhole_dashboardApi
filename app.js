@@ -4,9 +4,12 @@ var favicon = require('static-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var mongoose = require('mongoose');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
+
+var cfg = require('./config');
 
 var app = express();
 
@@ -55,5 +58,8 @@ app.use(function(err, req, res, next) {
     });
 });
 
+mongoose.connect(cfg.db.address, function (err) {
+    if (err) throw err;
+});
 
 module.exports = app;
