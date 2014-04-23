@@ -28,6 +28,9 @@ app.use(mw.setHeaders);
 
 app.use('/', routes);
 app.use('/users', users);
+app.options('*', function(req, res) {
+    return res.send(200);
+});
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
