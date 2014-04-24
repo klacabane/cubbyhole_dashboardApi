@@ -22,17 +22,7 @@ userSchema.statics.getUsersByMonth = function (limitDate, monthNb, done) {
         function (err, results) {
             if (err) return done(err);
 
-            var months = [];
-            for (var i = 0; i <= monthNb; i++) {
-                var monthCount = utils.getMonthCount(results,
-                    {
-                        year: limitDate.getFullYear(),
-                        month: limitDate.getMonth() + 1
-                    });
-                months.push(monthCount);
-
-                limitDate.setMonth(limitDate.getMonth() + 1);
-            }
+            var months = utils.getMonthArray(limitDate, monthNb, results);
 
             done(null, months);
         });

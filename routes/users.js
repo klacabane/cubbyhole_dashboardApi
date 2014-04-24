@@ -43,36 +43,14 @@ router.get('/total/:nMonth?', mw.parseLimitDate, function (req, res) {
         });
 });
 
-router.get('/plans', function (req, res) {
-    Plan.find({}, function (err, plans) {
+router.get('/:type/:nMonth?', mw.parseLimitDate, function (req, res) {
+    var type = req.params['type'];
+
+    Plan.getPlanTypeUsers(type, req.limitDate, req.monthNb, function (err, monthsData) {
         if (err) return res.send(500);
 
-        var results = [
-            {name: "Free", users: 0, plans: []},
-            {name: "Paying", users: 0, plans: []}
-        ];
-
-        async.each(
-            plans,
-            function (plan, callback) {
-                plan.getUsers(function (err, userCount) {
-                    if (err) return callback(err);
-
-                    var planData = {name: plan.name, users: userCount};
-                    var planType = plan.price > 0 ? results[1] : results[0];
-
-                    planType.plans.push(planData);
-                    planType.users += planData.users;
-
-                    callback();
-                });
-            },
-            function (err) {
-                if (err) return res.send(500);
-
-                res.send(200, {
-                    data: results
-                });
+        res.send(200, {
+            data: monthsData
         });
     });
 });

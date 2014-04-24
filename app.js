@@ -8,6 +8,7 @@ var mongoose = require('mongoose');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
+var plans = require('./routes/plans');
 
 var mw = require('./tools/middlewares');
 var cfg = require('./config');
@@ -28,6 +29,7 @@ app.use(mw.setHeaders);
 
 app.use('/', routes);
 app.use('/users', users);
+app.use('/plans', plans);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
