@@ -1,5 +1,5 @@
 var mongoose = require('mongoose'),
-    utils = require('../tools/utils');
+    utils = require('../tools/Utils');
 
 var userSchema = new mongoose.Schema({
     email: {type: String, lowercase: true, trim: true},

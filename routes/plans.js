@@ -2,7 +2,6 @@ var express = require('express');
 var mongoose = require('mongoose');
 var async = require('async');
 
-var utils = require('../tools/Utils');
 var mw = require('../tools/middlewares');
 
 var User = require('../models/User'),
@@ -41,6 +40,16 @@ router.get('/users', function (req, res) {
                     data: results
                 });
             });
+    });
+});
+
+router.get('/distribution/:nMonth?', mw.parseLimitDate, function (req, res) {
+    Plan.getPlansDistribution(req.limitDate, req.monthNb, function (err, results) {
+        if (err) return res.send(500);
+
+        res.send(200, {
+            data: results
+        });
     });
 });
 
