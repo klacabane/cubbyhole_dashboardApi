@@ -15,4 +15,20 @@ var userPlanSchema = new mongoose.Schema({
     }
 });
 
+userPlanSchema.statics.getYears = function (done) {
+    this.aggregate([
+        { $group: {
+            _id: {$year: '$billingDate'}}
+        }],
+        function (err, results) {
+            if (err) return done(err);
+
+            var res = results.map(function (yearObj) {
+                return yearObj._id;
+            });
+
+            done(null, res);
+        });
+};
+
 module.exports = mongoose.model('UserPlan', userPlanSchema);

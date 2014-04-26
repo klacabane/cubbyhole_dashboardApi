@@ -1,5 +1,8 @@
 var mongoose = require('mongoose'),
+    async = require('async'),
     utils = require('../tools/Utils');
+var UserPlan = require('../models/UserPlan'),
+    Plan = require('../models/Plan');
 
 var userSchema = new mongoose.Schema({
     email: {type: String, lowercase: true, trim: true},
@@ -11,6 +14,26 @@ var userSchema = new mongoose.Schema({
     isAllowed: {type: Boolean, default: true}
 });
 
+userSchema.methods.updatePlan = function (planName, billingDate, callback) {
+    var that = this;
+
+    async.parallel({
+        newPlan: function (next) {
+            Plan.findOne({name: planName}, function (err, plan) {
+                if (err) return next(err);
+
+                UserPlan.create({user: that._id, plan: plan._id, billingDate: billingDate}, next);
+            });
+        },
+        oldPlan: function (next) {
+            UserPlan.findByIdAndUpdate(that.currentPlan, {active: false}, next);
+        }
+    }, function (err, results) {
+        if (err) return callback(err);
+        that.currentPlan = results.newPlan._id;
+        that.save(callback);
+    });
+};
 
 userSchema.statics.getUsersByMonth = function (limitDate, monthNb, done) {
     this.aggregate([
@@ -22,9 +45,12 @@ userSchema.statics.getUsersByMonth = function (limitDate, monthNb, done) {
         function (err, results) {
             if (err) return done(err);
 
-            var months = utils.getMonthArray(limitDate, monthNb, results);
 
-            done(null, months);
+            var res = (typeof monthNb === 'number')
+                ? utils.getMonthArray(limitDate, monthNb, results)
+                : (results[0]) ? results[0].count : 0;
+
+            done(null, res);
         });
 };
 

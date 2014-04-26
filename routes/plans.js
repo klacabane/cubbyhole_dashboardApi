@@ -5,7 +5,8 @@ var async = require('async');
 var mw = require('../tools/middlewares');
 
 var User = require('../models/User'),
-    Plan = require('../models/Plan');
+    Plan = require('../models/Plan'),
+    UserPlan = require('../models/UserPlan');
 
 var router = express.Router();
 
@@ -40,6 +41,16 @@ router.get('/users', function (req, res) {
                     data: results
                 });
             });
+    });
+});
+
+router.get('/years', function (req, res) {
+    UserPlan.getYears(function (err, results) {
+        if (err) return res.send(500);
+
+        res.send(200, {
+            data: results
+        });
     });
 });
 

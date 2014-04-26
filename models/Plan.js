@@ -32,12 +32,17 @@ planSchema.methods.getUsers = function (limitDate, monthNb, done) {
             function (err, results) {
                 if (err) return done(err);
 
-                var months = Utils.getMonthArray(
-                    new Date(limitDate.getFullYear(), limitDate.getMonth(), limitDate.getDate()),
-                    monthNb,
-                    results);
+                var res;
+                if (typeof monthNb === 'number') {
+                    res = Utils.getMonthArray(
+                        new Date(limitDate.getFullYear(), limitDate.getMonth(), limitDate.getDate()),
+                        monthNb,
+                        results);
+                } else {
+                    res = (results[0]) ? results[0].count : 0;
+                }
 
-                done(null, months);
+                done(null, res);
             });
     }
 };
@@ -66,9 +71,12 @@ planSchema.statics.getPlanTypeUsers = function (type, limitDate, monthNb, done) 
             function (err, results) {
                 if (err) return done(err);
 
-                var months = Utils.getMonthArray(limitDate, monthNb, results);
+                var res = (typeof monthNb === 'number')
+                    ? Utils.getMonthArray(limitDate, monthNb, results)
+                    : (results[0]) ? results[0].count : 0;
 
-                done(null, months);
+
+                done(null, res);
             });
     });
 };

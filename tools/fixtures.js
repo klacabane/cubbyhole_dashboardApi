@@ -26,6 +26,28 @@ module.exports = {
                 callback);
         });
     },
+    createUser: function (planName, regDate, done) {
+        Plan.findOne({name: planName}, function (err, plan) {
+            if (err) return done(err);
+
+            var userPlan = new UserPlan({plan: plan._id, billingDate: regDate});
+
+            var email = 'fixt-' + new Date().getMilliseconds();
+            new User({
+                email: email,
+                password: 'hehhe',
+                registrationDate: regDate,
+                currentPlan: userPlan
+            }).save(function (err, user) {
+                    if (err) return done(err);
+
+                    userPlan.user = user._id;
+                    userPlan.save(function (err) {
+                        done(err, user);
+                    });
+                });
+        });
+    },
     _generateUsers: function (plan, regDate, nb, done) {
         var users = [],
             userPlans = [];

@@ -31,10 +31,12 @@ router.get('/total/:nMonth?', mw.parseLimitDate, function (req, res) {
             User.getUsersByMonth(req.limitDate, req.monthNb, function (err, monthsData) {
                 if (err) return res.send(500);
 
-                monthsData.forEach(function (value, index) {
-                    var toAdd = monthsData[index - 1] || userCount;
-                    monthsData[index] = value + toAdd;
-                });
+                if (monthsData instanceof Array) {
+                    monthsData.forEach(function (value, index) {
+                        var toAdd = monthsData[index - 1] || userCount;
+                        monthsData[index] = value + toAdd;
+                    });
+                }
 
                 res.send(200, {
                     data: monthsData
