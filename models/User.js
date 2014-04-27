@@ -11,7 +11,8 @@ var userSchema = new mongoose.Schema({
     currentPlan: { type: mongoose.Schema.Types.ObjectId, ref: 'UserPlan' },
     verified: {type: Boolean, default: false},
     isAdmin: Boolean,
-    isAllowed: {type: Boolean, default: true}
+    isAllowed: {type: Boolean, default: true},
+    location: mongoose.Schema.Types.Mixed
 });
 
 userSchema.methods.updatePlan = function (planName, billingDate, callback) {
@@ -22,7 +23,7 @@ userSchema.methods.updatePlan = function (planName, billingDate, callback) {
             Plan.findOne({name: planName}, function (err, plan) {
                 if (err) return next(err);
 
-                UserPlan.create({user: that._id, plan: plan._id, billingDate: billingDate}, next);
+                UserPlan.create({user: that._id, plan: plan._id, billingDate: billingDate, isFree: plan.price === 0}, next);
             });
         },
         oldPlan: function (next) {
@@ -33,6 +34,19 @@ userSchema.methods.updatePlan = function (planName, billingDate, callback) {
         that.currentPlan = results.newPlan._id;
         that.save(callback);
     });
+};
+
+userSchema.methods.getFreeToPayingDelay = function (done) {
+    var that = this;
+
+    this.model('UserPlan')
+        .find({user: this._id, isFree: false}, function (err, plans) {
+            if (err) return done(err);
+
+            var billingDate = utils.getEarliestBillingDate(plans);
+            done(null,
+                utils.getDelayInDays(that.registrationDate, billingDate));
+        });
 };
 
 userSchema.statics.getUsersByMonth = function (limitDate, monthNb, done) {
@@ -51,6 +65,18 @@ userSchema.statics.getUsersByMonth = function (limitDate, monthNb, done) {
                 : (results[0]) ? results[0].count : 0;
 
             done(null, res);
+        });
+};
+
+userSchema.statics.getUsersByLocation = function (done) {
+    this.aggregate([
+        {$match: {'location': {$exists: true}}},
+        { $group: {
+            _id: {continent: '$location.continent_code'},
+            count: {$sum: 1}}
+        }],
+        function (err, results) {
+            done(err, utils.getContinentArray(results));
         });
 };
 

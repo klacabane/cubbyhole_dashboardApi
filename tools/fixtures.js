@@ -1,4 +1,7 @@
 var async = require('async');
+
+var utils = require('../tools/Utils');
+
 var Plan = require('../models/Plan');
 var User = require('../models/User');
 var UserPlan = require('../models/UserPlan');
@@ -19,7 +22,7 @@ module.exports = {
                         function (date, done) {
                             var usersNb = Math.floor(Math.random() * 8) + 1;
 
-                            that._generateUsers(plan._id, date, usersNb, done);
+                            that._generateUsers(plan, date, usersNb, done);
                         },
                         next);
                 },
@@ -30,14 +33,17 @@ module.exports = {
         Plan.findOne({name: planName}, function (err, plan) {
             if (err) return done(err);
 
-            var userPlan = new UserPlan({plan: plan._id, billingDate: regDate});
+            var userPlan = new UserPlan({plan: plan._id, billingDate: regDate, isFree: plan.price === 0});
 
-            var email = 'fixt-' + new Date().getMilliseconds();
+            var email = 'fixt-' + Date.now();
+            var randomLocation = {'continent_code': utils.continents[Math.floor(Math.random() * 6)].iso};
+
             new User({
                 email: email,
                 password: 'hehhe',
                 registrationDate: regDate,
-                currentPlan: userPlan
+                currentPlan: userPlan,
+                location: randomLocation
             }).save(function (err, user) {
                     if (err) return done(err);
 
@@ -52,18 +58,21 @@ module.exports = {
         var users = [],
             userPlans = [];
         for (var i = 0; i < nb; i++) {
-            var userPlan = new UserPlan({plan: plan, billingDate: regDate});
-            userPlans.push(userPlan);
+            var userPlan = new UserPlan({plan: plan._id, billingDate: regDate, isFree: plan.price === 0});
 
+            var randomLocation = {'continent_code': utils.continents[Math.floor(Math.random() * 6)].iso};
             var email = 'fixt-' + new Date().getMilliseconds();
-            users.push(
-                new User({
-                    email: email,
-                    password: 'hehhe',
-                    registrationDate: regDate,
-                    currentPlan: userPlan
-                })
-            );
+            var fixture = new User({
+                email: email,
+                password: 'hehhe',
+                registrationDate: regDate,
+                currentPlan: userPlan,
+                location: randomLocation
+            });
+            users.push(fixture);
+
+            userPlan.user = fixture._id;
+            userPlans.push(userPlan);
         }
 
         async.each(users, function (user, next) {

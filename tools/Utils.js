@@ -1,4 +1,12 @@
 module.exports = {
+    continents: [
+        {iso: 'AF', name: 'africa'},
+        {iso: 'AS', name: 'asia'},
+        {iso: 'OC', name: 'australia'},
+        {iso: 'EU', name: 'europe'},
+        {iso: 'NA', name: 'north_america'},
+        {iso: 'SA', name: 'south_america'}
+    ],
     getMonthCount: function (data, d) {
         var count = 0;
         for (var i = 0, length = data.length; i < length; i++) {
@@ -25,6 +33,39 @@ module.exports = {
         }
 
         return months;
-    }
+    },
+    getContinentArray: function (data) {
+        var continents = this.continents;
 
+        var res = continents
+            .map(function (continent) {
+                var cObj = {name: continent.name, value: 0};
+
+                for (var i = 0, length = data.length; i < length; i++) {
+                    var cData = data[i];
+                    if (cData._id.continent === continent.iso) {
+                        cObj.value = cData.count;
+                        break;
+                    }
+                }
+                return cObj;
+            });
+
+        return res;
+    },
+    getEarliestBillingDate: function (plans) {
+        if (plans.length === 1) return plans[0].billingDate;
+
+        return plans.reduce(function (a, b) {
+            return a.billingDate < b.billingDate
+                ? a.billingDate
+                : b.billingDate;
+        });
+    },
+    getDelayInDays: function (from, to) {
+        var timeDiff = Math.abs(to.getTime() - from.getTime());
+        var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+        return diffDays;
+    }
 };

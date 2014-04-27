@@ -6,7 +6,8 @@ var utils = require('../tools/Utils');
 var mw = require('../tools/middlewares');
 
 var User = require('../models/User'),
-    Plan = require('../models/Plan');
+    Plan = require('../models/Plan'),
+    UserPlan = require('../models/UserPlan');
 
 var router = express.Router();
 
@@ -43,6 +44,26 @@ router.get('/total/:nMonth?', mw.parseLimitDate, function (req, res) {
                 });
             });
         });
+});
+
+router.get('/location', function (req, res) {
+    User.getUsersByLocation(function (err, results) {
+        if (err) return res.send(500);
+
+        res.send(200, {
+            data: results
+        });
+    });
+});
+
+router.get('/delay', function (req, res) {
+    UserPlan.getFreeToPayingDelays(function (err, results) {
+        if (err) return res.send(500);
+
+        res.send(200, {
+            data: results
+        });
+    });
 });
 
 router.get('/:type/:nMonth?', mw.parseLimitDate, function (req, res) {
