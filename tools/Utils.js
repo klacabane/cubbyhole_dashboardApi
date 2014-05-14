@@ -1,11 +1,11 @@
 module.exports = {
     continents: [
-        {iso: 'AF', name: 'africa'},
-        {iso: 'AS', name: 'asia'},
-        {iso: 'OC', name: 'australia'},
-        {iso: 'EU', name: 'europe'},
-        {iso: 'NA', name: 'north_america'},
-        {iso: 'SA', name: 'south_america'}
+        {iso: 'AF', name: 'africa', display_name: 'Africa'},
+        {iso: 'AS', name: 'asia', display_name: 'Asia'},
+        {iso: 'OC', name: 'australia', display_name: 'Australia'},
+        {iso: 'EU', name: 'europe', display_name: 'Europe'},
+        {iso: 'NA', name: 'north_america', display_name: 'North America'},
+        {iso: 'SA', name: 'south_america', display_name: 'South America'}
     ],
     getMonthCount: function (data, d) {
         var count = 0;
