@@ -58,7 +58,15 @@ module.exports = {
         var users = [],
             userPlans = [];
         for (var i = 0; i < nb; i++) {
-            var userPlan = new UserPlan({plan: plan._id, billingDate: regDate, isFree: plan.price === 0});
+            var userPlan = new UserPlan({
+                plan: plan._id,
+                billingDate: regDate,
+                isFree: plan.price === 0,
+                usage: {
+                    storage: Math.round(Math.random() * 100000000),
+                    share: Math.round(Math.random() * 100000000)
+                }
+            });
 
             var randomLocation = {'continent_code': utils.continents[Math.floor(Math.random() * 6)].iso};
             var email = 'fixt-' + new Date().getMilliseconds();

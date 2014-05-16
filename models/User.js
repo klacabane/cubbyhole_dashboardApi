@@ -31,6 +31,7 @@ userSchema.methods.updatePlan = function (planName, billingDate, callback) {
         }
     }, function (err, results) {
         if (err) return callback(err);
+
         that.currentPlan = results.newPlan._id;
         that.save(callback);
     });

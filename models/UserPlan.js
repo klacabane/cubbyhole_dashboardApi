@@ -1,6 +1,7 @@
 var mongoose = require('mongoose'),
     async = require('async'),
-    Plan = require('../models/Plan');
+    Plan = require('../models/Plan'),
+    utils = require('../tools/Utils');
 
 var userPlanSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
@@ -8,6 +9,7 @@ var userPlanSchema = new mongoose.Schema({
     billingDate: { type: Date, default: Date.now },
     active: { type: Boolean, default: true },
     usage: {
+        storage: {type: Number, default: 0},
         share: {type: Number, default: 0},         // kb
         bandwidth: {
             upload: {type: Number, default: 0},    // kb/s
@@ -93,6 +95,53 @@ userPlanSchema.statics.getFreeToPayingDelays = function (done) {
                 done(err, res);
             });
         });
+};
+
+userPlanSchema.statics.getPlansUsage = function (limitDate, monthNb, done) {
+    var self = this;
+    Plan.find({}, function (err, plans) {
+        if (err) return done(err);
+
+        var mostExpensivePlan = utils.getMostExpensivePlan(plans);
+
+        var plansFn = plans.map(function (plan) {
+            return function (next) {
+                self.aggregate([
+                    { $match: {
+                        billingDate: {$gte: limitDate},
+                        plan: plan._id
+                    }},
+                    { $group: {
+                        _id: {year: {$year: '$billingDate'}, month: {$month: '$billingDate'}},
+                        count: {$sum: 1},
+                        totalStorage: {$sum: plan.storage},
+                        totalShare: {$sum: plan.sharedQuota},
+                        usedStorage: {$sum: '$usage.storage'},
+                        usedShare: {$sum: '$usage.share'}}
+                    }],
+                    function (err, results) {
+                        if (err) return next(err);
+
+                        var usageData = utils.getMonthPercentArrays(
+                            new Date(limitDate.getFullYear(), limitDate.getMonth(), limitDate.getDate()),
+                            monthNb,
+                            results);
+
+                        var res = {
+                            name: plan.name,
+                            isFree: plan.price === 0,
+                            isMostExpensive: plan._id === mostExpensivePlan,
+                            storageUsage: usageData.storage,
+                            sharedQuotaUsage: usageData.share
+                        };
+
+                        next(null, res);
+                    });
+            };
+        });
+
+        async.parallel(plansFn, done);
+    });
 };
 
 module.exports = mongoose.model('UserPlan', userPlanSchema);

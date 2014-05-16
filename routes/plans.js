@@ -54,6 +54,16 @@ router.get('/years', function (req, res) {
     });
 });
 
+router.get('/usage/:nMonth?', mw.parseLimitDate, function (req, res) {
+    UserPlan.getPlansUsage(req.limitDate, req.monthNb, function (err, results) {
+        if (err) return res.send(500);
+
+        res.send(200, {
+            data: results
+        });
+    });
+});
+
 router.get('/distribution/:nMonth?', mw.parseLimitDate, function (req, res) {
     Plan.getPlansDistribution(req.limitDate, req.monthNb, function (err, results) {
         if (err) return res.send(500);
