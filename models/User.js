@@ -1,6 +1,7 @@
 var mongoose = require('mongoose'),
     async = require('async'),
     utils = require('../tools/Utils');
+
 var UserPlan = require('../models/UserPlan'),
     Plan = require('../models/Plan');
 

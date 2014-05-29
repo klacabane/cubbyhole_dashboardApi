@@ -1,4 +1,9 @@
-module.exports = {
+var async = require('async');
+
+var UserPlan,
+    User;
+
+var Utils = {
     continents: [
         {iso: 'AF', name: 'africa', display_name: 'Africa'},
         {iso: 'AS', name: 'asia', display_name: 'Asia'},
@@ -73,7 +78,7 @@ module.exports = {
             .map(function (continent) {
                 var cObj = {name: continent.name, value: 0};
 
-                for (var i = 0, length = data.length; i < length; i++) {
+                for (var i = 0, len = data.length; i < len; i++) {
                     var cData = data[i];
                     if (cData._id.continent === continent.iso) {
                         cObj.value = cData.count;
@@ -116,5 +121,84 @@ module.exports = {
     bytesToMb: function (bytes) {
         if (bytes == 0) return 0;
         return (bytes/1000000).toFixed(2);
+    },
+    getQuery: function (metrics, callback) {
+        var queryLabel = [metrics[0].prop, metrics[1].prop, metrics[2].prop]
+            .join('_');
+
+        this.reportQueries[queryLabel](metrics, callback);
+    },
+    /**
+     *  Report Queries
+     *
+     */
+    reportQueries: {
+        'users_plan_location': function (metrics, done) {
+            var userFilter = metrics[0].filter,
+                planFilter = metrics[1].filter;
+
+            var match = {$match: {}};
+
+            if (userFilter === 'new') {
+                var date = new Date();
+                date.setHours(0,0,0,0);
+
+                match['$match'].registrationDate = {$gte: date};
+            }
+
+            var query = [{$group: {_id: '$user'}}],
+                result = {
+                    'AF': 0,
+                    'AS': 0,
+                    'OC': 0,
+                    'EU': 0,
+                    'NA': 0,
+                    'SA': 0
+                };
+
+            if (planFilter === 'all paying')
+                match['$match'].isFree = false;
+            else if (planFilter === 'all free')
+                match['$match'].isFree = true;
+            else
+                match['$match'].plan = planFilter;
+
+            query.splice(0, 0, match);
+
+            UserPlan.aggregate(query, function (err, userIds) {
+                if (err) return done(err);
+
+                async.each(
+                    userIds,
+                    function (userId, next) {
+                        User.findOne({_id: userId, location: {$exists: true}}, function (err, user) {
+                            if (user) {
+                                result[user.location.continent_code]++;
+                            }
+                            next(err);
+                        });
+                    },
+                    function (err) {
+                        if (err) return done(err);
+
+                        var res = Utils.continents
+                            .map(function (continent) {
+                                return {
+                                    name: continent.name,
+                                    value: result[continent.iso]
+                                };
+                            });
+                        done(null, res);
+                    });
+            });
+        },
+        'users_plan_time': function (metrics, year) {
+
+        }
     }
 };
+
+module.exports = Utils;
+
+UserPlan = require('../models/UserPlan');
+User = require('../models/User');
