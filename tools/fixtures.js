@@ -42,6 +42,7 @@ module.exports = {
                 email: email,
                 password: 'hehhe',
                 registrationDate: regDate,
+                lastBillingDate: regDate,
                 currentPlan: userPlan,
                 location: randomLocation
             }).save(function (err, user) {

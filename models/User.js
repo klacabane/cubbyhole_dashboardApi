@@ -8,8 +8,9 @@ var UserPlan = require('../models/UserPlan'),
 var userSchema = new mongoose.Schema({
     email: {type: String, lowercase: true, trim: true},
     password: String,
-    registrationDate: { type: Date, default: Date.now },
-    currentPlan: { type: mongoose.Schema.Types.ObjectId, ref: 'UserPlan' },
+    registrationDate: {type: Date, default: Date.now},
+    lastBillingDate: {type: Date},
+    currentPlan: {type: mongoose.Schema.Types.ObjectId, ref: 'UserPlan'},
     verified: {type: Boolean, default: false},
     isAdmin: Boolean,
     isAllowed: {type: Boolean, default: true},
@@ -34,6 +35,8 @@ userSchema.methods.updatePlan = function (planName, billingDate, callback) {
         if (err) return callback(err);
 
         that.currentPlan = results.newPlan._id;
+        that.lastBillingDate = results.newPlan.billingDate;
+
         that.save(callback);
     });
 };

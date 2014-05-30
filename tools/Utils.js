@@ -140,33 +140,33 @@ var Utils = {
             var userFilter = metrics[0].filter,
                 planFilter = metrics[1].filter;
 
-            var match = {$match: {}};
+            var query = [
+                    {$match: {}},
+                    {$group: {_id: '$user'}}
+                ];
+
+            var result = {
+                'AF': 0,
+                'AS': 0,
+                'OC': 0,
+                'EU': 0,
+                'NA': 0,
+                'SA': 0
+            };
 
             if (userFilter === 'new') {
                 var date = new Date();
                 date.setHours(0,0,0,0);
 
-                match['$match'].billingDate = {$gte: date};
+                query[0]['$match'].billingDate = {$gte: date};
             }
 
-            var query = [{$group: {_id: '$user'}}],
-                result = {
-                    'AF': 0,
-                    'AS': 0,
-                    'OC': 0,
-                    'EU': 0,
-                    'NA': 0,
-                    'SA': 0
-                };
-
             if (planFilter === 'all paying')
-                match['$match'].isFree = false;
+                query[0]['$match'].isFree = false;
             else if (planFilter === 'all free')
-                match['$match'].isFree = true;
+                query[0]['$match'].isFree = true;
             else
-                match['$match'].plan = planFilter;
-
-            query.splice(0, 0, match);
+                query[0]['$match'].plan = planFilter;
 
             UserPlan.aggregate(query, function (err, userIds) {
                 if (err) return done(err);
@@ -175,7 +175,7 @@ var Utils = {
                     userIds,
                     function (userId, next) {
                         User.findOne({_id: userId, location: {$exists: true}}, function (err, user) {
-                            if (user) {
+                            if (user && user.location) {
                                 result[user.location.continent_code]++;
                             }
                             next(err);
@@ -214,10 +214,9 @@ var Utils = {
                         plan.getUsers(date, 11, callback);
                     });
                 }
-            })(function (err, userData) {
+            })(function (err, monthsData) {
                 if (err) return done(err);
 
-                var monthsData = Utils.getMonthArray(date, 11, userData);
                 if (userFilter === 'all')
                     for (var i = 0, len = monthsData.length; i < len; i++) {
                         var prev = monthsData[i - 1];
@@ -226,16 +225,47 @@ var Utils = {
                         }
                     }
 
-                for (var i = 0, result = [], len = monthsData.length; i < len; i++) {
-                    result.push({
-                        name: Utils.months[i],
-                        value: monthsData[i]
-                    });
-                }
-                done(null, result);
+                done(null, monthsData);
             });
         },
         'users_location_plan': function (metrics, done) {
+            var userFilter = metrics[0].filter,
+                locationFilter = metrics[1].filter;
+
+            var query = {
+                'location.continent_code': 'EU'
+            };
+
+            if (userFilter === 'new') {
+                var date = new Date();
+                date.setHours(0,0,0,0);
+
+                query.lastBillingDate = {$gte: date};
+            }
+
+            Plan.getAllPlansHash(function (err, planHash) {
+                if (err) return done(err);
+
+                var plans = planHash;
+                User.find(query)
+                    .populate('currentPlan')
+                    .exec(function (err, users) {
+                        if (err) return done(err);
+
+                        for (var i = 0, len = users.length; i < len; i++) {
+                            var user = users[i];
+
+                            plans[user.currentPlan.plan].value++;
+                        }
+
+                        var result = [];
+                        for (var prop in plans) {
+                            result.push(plans[prop]);
+                        }
+
+                        done(null, result);
+                    });
+            });
         }
     }
 };

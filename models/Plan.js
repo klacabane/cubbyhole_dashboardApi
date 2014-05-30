@@ -107,4 +107,18 @@ planSchema.statics.getPlansDistribution = function (limitDate, monthNb, done) {
     });
 };
 
+planSchema.statics.getAllPlansHash = function (done) {
+    this.find({}, function (err, plans) {
+        if (err) return done(err);
+
+        for (var i = 0, res = {}, len = plans.length; i < len; i++) {
+            var plan = plans[i];
+
+            res[plan._id] = {name: plan.name, value: 0};
+        }
+
+        done(null, res);
+    });
+}
+
 module.exports = mongoose.model('Plan', planSchema);
