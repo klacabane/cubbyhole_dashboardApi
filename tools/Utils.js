@@ -1,6 +1,7 @@
 var async = require('async');
 
-var UserPlan,
+var Plan,
+    UserPlan,
     User;
 
 var Utils = {
@@ -12,6 +13,8 @@ var Utils = {
         {iso: 'NA', name: 'north_america', display_name: 'North America'},
         {iso: 'SA', name: 'south_america', display_name: 'South America'}
     ],
+    months: ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'],
     getMonthCount: function (data, date) {
         var count = 0;
         for (var i = 0, length = data.length; i < length; i++) {
@@ -143,7 +146,7 @@ var Utils = {
                 var date = new Date();
                 date.setHours(0,0,0,0);
 
-                match['$match'].registrationDate = {$gte: date};
+                match['$match'].billingDate = {$gte: date};
             }
 
             var query = [{$group: {_id: '$user'}}],
@@ -192,13 +195,53 @@ var Utils = {
                     });
             });
         },
-        'users_plan_time': function (metrics, year) {
+        'users_plan_time': function (metrics, done) {
+            var userFilter = metrics[0].filter,
+                planFilter = metrics[1].filter,
+                yearFilter = metrics[2].filter;
 
+            var date = new Date(yearFilter, 0, 1),
+                planByType = (planFilter === 'all paying' || planFilter === 'all free');
+
+            (function (callback) {
+                if (planByType) {
+                    var type = planFilter.split(' ')[1];
+                    Plan.getPlanTypeUsers(type, date, 11, callback);
+                } else {
+                    Plan.findOne({_id: planFilter}, function (err, plan) {
+                        if (err) return callback(err);
+
+                        plan.getUsers(date, 11, callback);
+                    });
+                }
+            })(function (err, userData) {
+                if (err) return done(err);
+
+                var monthsData = Utils.getMonthArray(date, 11, userData);
+                if (userFilter === 'all')
+                    for (var i = 0, len = monthsData.length; i < len; i++) {
+                        var prev = monthsData[i - 1];
+                        if (prev) {
+                            monthsData[i] += prev;
+                        }
+                    }
+
+                for (var i = 0, result = [], len = monthsData.length; i < len; i++) {
+                    result.push({
+                        name: Utils.months[i],
+                        value: monthsData[i]
+                    });
+                }
+                done(null, result);
+            });
+        },
+        'users_location_plan': function (metrics, done) {
         }
     }
 };
 
 module.exports = Utils;
 
+Plan = require('../models/Plan');
 UserPlan = require('../models/UserPlan');
 User = require('../models/User');
