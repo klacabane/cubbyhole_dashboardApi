@@ -233,7 +233,7 @@ var Utils = {
                 locationFilter = metrics[1].filter;
 
             var query = {
-                'location.continent_code': 'EU'
+                'location.continent_code': locationFilter
             };
 
             if (userFilter === 'new') {
@@ -266,6 +266,9 @@ var Utils = {
                         done(null, result);
                     });
             });
+        },
+        'users_location_time': function (metrics, done) {
+
         }
     }
 };

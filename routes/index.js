@@ -11,13 +11,14 @@ router.get('/', function(req, res) {
 });
 
 router.get('/location', function (req, res) {
-    var results = utils.continents
-        .map(function (continent) {
-            return continent.display_name;
-        });
+    var result = {};
+    for (var i = 0, continents = utils.continents, len = continents.length; i < len; i++) {
+        var continent = continents[i];
+        result[continent.iso] = continent.display_name;
+    }
 
     res.send(200, {
-        data: results
+        data: result
     });
 });
 
