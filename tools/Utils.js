@@ -225,7 +225,14 @@ var Utils = {
                         }
                     }
 
-                done(null, monthsData);
+                for (var i = 0, result = [], months = Utils.months, len = monthsData.length; i < len; i++) {
+                    result.push({
+                        name: months[i],
+                        value: monthsData[i]
+                    });
+                }
+
+                done(null, result);
             });
         },
         'users_location_plan': function (metrics, done) {
@@ -268,6 +275,55 @@ var Utils = {
             });
         },
         'users_location_time': function (metrics, done) {
+            var userFilter = metrics[0].filter,
+                locationFilter = metrics[1].filter,
+                yearFilter = metrics[2].filter;
+
+            var date = new Date(yearFilter, 0, 1);
+            var query = {
+                'location.continent_code': locationFilter,
+                registrationDate: {$gte: date}
+            };
+
+            User.count({
+                'location.continent_code': locationFilter,
+                registrationDate: {$lt: date}
+            }, function (err, userBaseCount) {
+                if (err) return done(err);
+
+                User.aggregate([
+                    {$match: query},
+                    {$group: {
+                        _id: { year: {$year: '$registrationDate'}, month: {$month: '$registrationDate'}},
+                        count: {$sum: 1}}
+                    }],
+                    function (err, results) {
+                        if (err) return done(err);
+
+                        var monthsData = Utils.getMonthArray(date, 11, results);
+
+                        if (userFilter === 'all')
+                            for (var i = 0, len = monthsData.length; i < len; i++) {
+                                var prev = monthsData[i - 1];
+                                if (typeof prev === "undefined") {
+                                    monthsData[i] += userBaseCount;
+                                } else {
+                                    monthsData[i] += prev;
+                                }
+                            }
+
+                        for (var i = 0, result = [], months = Utils.months, len = monthsData.length; i < len; i++) {
+                            result.push({
+                                name: months[i],
+                                value: monthsData[i]
+                            });
+                        }
+
+                        done(null, result);
+                    });
+            });
+        },
+        'users_time_location': function (metrics, done) {
 
         }
     }
