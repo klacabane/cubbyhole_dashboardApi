@@ -324,7 +324,55 @@ var Utils = {
             });
         },
         'users_time_location': function (metrics, done) {
+            var userFilter = metrics[0].filter,
+                yearFilter = metrics[1].filter,
+                date = new Date(yearFilter, 0, 1),
+                limitDate = new Date(yearFilter + 1, 0, 1);
 
+            var query = [
+                {$match: {
+                    $and: [
+                        {registrationDate: {$gte: date}},
+                        {registrationDate: {$lt: limitDate}}
+                    ]}},
+                {$group: {_id: '$user'}}
+            ];
+
+            var result = {
+                'AF': 0,
+                'AS': 0,
+                'OC': 0,
+                'EU': 0,
+                'NA': 0,
+                'SA': 0
+            };
+
+            UserPlan.aggregate(query, function (err, userIds) {
+                if (err) return done(err);
+
+                async.each(
+                    userIds,
+                    function (userId, next) {
+                        User.findOne({_id: userId, location: {$exists: true}}, function (err, user) {
+                            if (user && user.location) {
+                                result[user.location.continent_code]++;
+                            }
+                            next(err);
+                        });
+                    },
+                    function (err) {
+                        if (err) return done(err);
+
+                        var res = Utils.continents
+                            .map(function (continent) {
+                                return {
+                                    name: continent.name,
+                                    value: result[continent.iso]
+                                };
+                            });
+                        done(null, res);
+                    });
+            });
         }
     }
 };

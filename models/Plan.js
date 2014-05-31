@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 var async = require('async');
-var UserPlan = require('../models/UserPlan');
-var Utils = require('../tools/Utils');
+var UserPlan,
+    Utils;
 
 var planSchema = new mongoose.Schema({
     name : String,
@@ -122,3 +122,6 @@ planSchema.statics.getAllPlansHash = function (done) {
 }
 
 module.exports = mongoose.model('Plan', planSchema);
+
+UserPlan = require('../models/UserPlan');
+Utils = require('../tools/Utils');
