@@ -329,15 +329,6 @@ var Utils = {
                 date = new Date(yearFilter, 0, 1),
                 limitDate = new Date(yearFilter + 1, 0, 1);
 
-            var query = [
-                {$match: {
-                    $and: [
-                        {registrationDate: {$gte: date}},
-                        {registrationDate: {$lt: limitDate}}
-                    ]}},
-                {$group: {_id: '$user'}}
-            ];
-
             var result = {
                 'AF': 0,
                 'AS': 0,
@@ -347,31 +338,37 @@ var Utils = {
                 'SA': 0
             };
 
-            UserPlan.aggregate(query, function (err, userIds) {
+            (function (callback) {
+                async.each(
+                    Object.keys(result),
+                    function (cont, next) {
+                        User.count({registrationDate: {$gte: date, $lt: limitDate}, 'location.continent_code': cont},
+                            function (err, userCount) {
+                                if (err) return next(err);
+
+                                result[cont] = userCount;
+                                if (userFilter === 'new') return next();
+
+                                User.count({registrationDate: {$lt: date}, 'location.continent_code': cont},
+                                    function (err, userBaseCount) {
+                                        if (err) return next(err);
+
+                                        result[cont] += userBaseCount;
+                                        next();
+                                    });
+                            });
+                    }, callback);
+            })(function (err) {
                 if (err) return done(err);
 
-                async.each(
-                    userIds,
-                    function (userId, next) {
-                        User.findOne({_id: userId, location: {$exists: true}}, function (err, user) {
-                            if (user && user.location) {
-                                result[user.location.continent_code]++;
-                            }
-                            next(err);
-                        });
-                    },
-                    function (err) {
-                        if (err) return done(err);
-
-                        var res = Utils.continents
-                            .map(function (continent) {
-                                return {
-                                    name: continent.name,
-                                    value: result[continent.iso]
-                                };
-                            });
-                        done(null, res);
+                var res = Utils.continents
+                    .map(function (continent) {
+                        return {
+                            name: continent.name,
+                            value: result[continent.iso]
+                        };
                     });
+                done(null, res);
             });
         }
     }
