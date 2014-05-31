@@ -370,6 +370,51 @@ var Utils = {
                     });
                 done(null, res);
             });
+        },
+        'users_time_plan': function (metrics, done) {
+            var userFilter = metrics[0].filter,
+                yearFilter = metrics[1].filter,
+                date = new Date(yearFilter, 0, 1),
+                limitDate = new Date(yearFilter + 1, 0, 1);
+
+            Plan.getAllPlansHash(function (err, planHash) {
+                if (err) return done(err);
+
+                var plans = planHash;
+
+                async.each(
+                    Object.keys(plans),
+                    function (planId, next) {
+                        UserPlan.find({billingDate: {$gte: date, $lt: limitDate}, plan: planId})
+                            .distinct('user')
+                            .exec(function (err, data) {
+                                if (err) return next(err);
+
+                                plans[planId].value = data.length
+
+                                if (userFilter === 'new') return next();
+
+                                UserPlan.find({billingDate: {$lt: date}, plan: planId})
+                                    .distinct('user')
+                                    .exec(function (err, prevData) {
+                                        if (err) return next(err);
+
+                                        plans[planId].value += prevData.length;
+                                        next();
+                                    });
+                            });
+                    },
+                    function (err) {
+                        if (err) return done(err);
+
+                        var result = [];
+                        for (var prop in plans) {
+                            result.push(plans[prop]);
+                        }
+
+                        done(null, result);
+                    });
+            });
         }
     }
 };
