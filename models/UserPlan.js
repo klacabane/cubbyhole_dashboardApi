@@ -1,7 +1,7 @@
 var mongoose = require('mongoose'),
     async = require('async'),
-    Plan = require('../models/Plan'),
-    utils = require('../tools/Utils');
+    utils = require('../tools/Utils'),
+    Plan;
 
 var userPlanSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
@@ -145,3 +145,5 @@ userPlanSchema.statics.getPlansUsage = function (limitDate, monthNb, done) {
 };
 
 module.exports = mongoose.model('UserPlan', userPlanSchema);
+
+Plan = require('../models/Plan');
