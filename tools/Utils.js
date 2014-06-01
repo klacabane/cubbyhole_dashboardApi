@@ -125,7 +125,7 @@ var Utils = {
         if (bytes == 0) return 0;
         return (bytes/1000000).toFixed(2);
     },
-    getQuery: function (metrics, callback) {
+    getQueryResult: function (metrics, callback) {
         var queryLabel = [metrics[0].prop, metrics[1].prop, metrics[2].prop]
             .join('_');
 
@@ -305,7 +305,7 @@ var Utils = {
                         if (userFilter === 'all')
                             for (var i = 0, len = monthsData.length; i < len; i++) {
                                 var prev = monthsData[i - 1];
-                                if (typeof prev === "undefined") {
+                                if (typeof prev === 'undefined') {
                                     monthsData[i] += userBaseCount;
                                 } else {
                                     monthsData[i] += prev;
@@ -413,6 +413,75 @@ var Utils = {
                         }
 
                         done(null, result);
+                    });
+            });
+        },
+        'plans_plan_location': function (metrics, done) {
+            var planFilter = metrics[1].filter;
+
+            var query = {},
+                result = {
+                    'AF': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
+                    'AS': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
+                    'OC': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
+                    'EU': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
+                    'NA': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
+                    'SA': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0}
+                };
+
+            if (planFilter === 'all paying')
+                query.price = {$gt: 0};
+            else if (planFilter === 'all free')
+                query.price = 0;
+            else
+                query._id = planFilter;
+
+            Plan.find(query, function (err, plans) {
+                if (err) return done(err);
+                if (!plans.length) return done(new Error('No plan found'));
+
+                async.each(
+                    plans,
+                    function (plan, next) {
+                        UserPlan.find({active: true, plan: plan._id})
+                            .populate('user')
+                            .exec(function (err, userPlans) {
+                                if (err) return next(err);
+
+                                for (var key in result) {
+                                    var continentPlans = userPlans
+                                        .filter(function (userPlan) {
+                                            return userPlan.user && userPlan.user.location &&
+                                                userPlan.user.location.continent_code === key;
+                                        });
+
+                                    result[key].totalStorage += (plan.storage * continentPlans.length);
+                                    result[key].totalShare += (plan.sharedQuota * continentPlans.length);
+
+                                    for (var i = 0, len = continentPlans.length; i < len; i++) {
+                                        var continentPlan = continentPlans[i];
+                                        result[key].usedStorage += Math.round(Utils.bytesToMb(continentPlan.usage.storage));
+                                        result[key].usedShare += Math.round(Utils.bytesToMb(continentPlan.usage.share));
+                                    }
+                                }
+                                next();
+                            });
+                    },
+                    function (err) {
+                        if (err) return done(err);
+
+                        var res = Utils.continents
+                            .map(function (continent) {
+                                var contData = result[continent.iso];
+                                return {
+                                    name: continent.name,
+                                    storage: Math.round(
+                                        (contData.usedStorage / contData.totalStorage) * 100),
+                                    share: Math.round(
+                                        (contData.usedShare / contData.totalShare) * 100)
+                                }
+                            });
+                        done(null, res);
                     });
             });
         }

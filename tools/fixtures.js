@@ -49,6 +49,8 @@ module.exports = {
                     if (err) return done(err);
 
                     userPlan.user = user._id;
+                    userPlan.usage.storage = Math.round(Math.random() * 100000000);
+                    userPlan.usage.share = Math.round(Math.random() * 100000000);
                     userPlan.save(function (err) {
                         done(err, user);
                     });
@@ -84,15 +86,19 @@ module.exports = {
             userPlans.push(userPlan);
         }
 
-        async.each(users, function (user, next) {
+        async.each(
+            users,
+            function (user, next) {
                 user.save(next);
             },
             function (err) {
                 if (err) return done(err);
 
-                async.each(userPlans, function (uplan, cb) {
-                    uplan.save(cb);
-                }, done);
+                async.each(
+                    userPlans,
+                    function (uplan, cb) {
+                        uplan.save(cb);
+                    }, done);
             });
     },
     _getDates: function (monthCount) {
@@ -104,7 +110,7 @@ module.exports = {
         limitDate.setDate(10);
         limitDate.setHours(24,0,0,0);
 
-        for (var i = 0; i <= nMonth; i++) {
+        for (var i = 0; i < nMonth; i++) {
             dates.push(new Date(limitDate.getFullYear(), limitDate.getMonth(), limitDate.getDate()));
 
             limitDate.setMonth(limitDate.getMonth() + 1);
