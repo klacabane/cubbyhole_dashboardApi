@@ -103,17 +103,15 @@ module.exports = {
     },
     _getDates: function (monthCount) {
         var dates = [],
-            nMonth = monthCount - 1,
             limitDate = new Date();
 
-        limitDate.setMonth(limitDate.getMonth() - nMonth);
         limitDate.setDate(10);
         limitDate.setHours(24,0,0,0);
 
-        for (var i = 0; i < nMonth; i++) {
+        for (var i = 0; i < monthCount; i++) {
             dates.push(new Date(limitDate.getFullYear(), limitDate.getMonth(), limitDate.getDate()));
 
-            limitDate.setMonth(limitDate.getMonth() + 1);
+            limitDate.setMonth(limitDate.getMonth() - 1);
         }
 
         return dates;
