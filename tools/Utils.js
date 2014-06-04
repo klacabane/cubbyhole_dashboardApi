@@ -417,7 +417,8 @@ var Utils = {
             });
         },
         'plans_plan_location': function (metrics, done) {
-            var planFilter = metrics[1].filter;
+            var usageFilter = metrics[0].filter,
+                planFilter = metrics[1].filter;
 
             var query = {},
                 result = {
@@ -472,14 +473,21 @@ var Utils = {
 
                         var res = Utils.continents
                             .map(function (continent) {
-                                var contData = result[continent.iso];
-                                return {
-                                    name: continent.name,
-                                    storage: Math.round(
-                                        (contData.usedStorage / contData.totalStorage) * 100),
-                                    share: Math.round(
-                                        (contData.usedShare / contData.totalShare) * 100)
+                                var contData = result[continent.iso],
+                                    storagePercent = Math.round((contData.usedStorage / contData.totalStorage) * 100),
+                                    sharePercent = Math.round((contData.usedShare / contData.totalShare) * 100);
+
+                                var contObj = {name: continent.name};
+                                if (usageFilter === 'storage' || usageFilter === 'shared quota') {
+                                    contObj.value = (usageFilter === 'storage')
+                                        ? storagePercent
+                                        : sharePercent
+                                } else {
+                                    contObj.storage = storagePercent;
+                                    contObj.share = sharePercent;
                                 }
+
+                                return contObj;
                             });
                         done(null, res);
                     });
