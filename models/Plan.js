@@ -114,7 +114,14 @@ planSchema.statics.getAllPlansHash = function (done) {
         for (var i = 0, res = {}, len = plans.length; i < len; i++) {
             var plan = plans[i];
 
-            res[plan._id] = {name: plan.name, value: 0};
+            res[plan._id] = {
+                name: plan.name,
+                value: 0,
+                storage: plan.storage,
+                share: plan.sharedQuota,
+                total: 0,
+                used: 0
+            };
         }
 
         done(null, res);

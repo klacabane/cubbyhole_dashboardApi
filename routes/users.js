@@ -33,10 +33,14 @@ router.get('/total/:nMonth?', mw.parseLimitDate, function (req, res) {
                 if (err) return res.send(500);
 
                 if (monthsData instanceof Array) {
-                    monthsData.forEach(function (value, index) {
-                        var toAdd = monthsData[index - 1] || userCount;
-                        monthsData[index] = value + toAdd;
-                    });
+                    for (var i = 0, len = monthsData.length; i < len; i++) {
+                        var prev = monthsData[i - 1];
+                        if (typeof prev === 'undefined') {
+                            monthsData[i] += userCount;
+                        } else {
+                            monthsData[i] += prev;
+                        }
+                    }
                 }
 
                 res.send(200, {
