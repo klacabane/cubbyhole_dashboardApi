@@ -141,9 +141,9 @@ var Utils = {
                 planFilter = metrics[1].filter;
 
             var query = [
-                    {$match: {}},
-                    {$group: {_id: '$user'}}
-                ];
+                {$match: {}},
+                {$group: {_id: '$user'}}
+            ];
 
             var result = {
                 'AF': 0,
@@ -338,38 +338,38 @@ var Utils = {
                 'SA': 0
             };
 
-            (function (callback) {
-                async.each(
-                    Object.keys(result),
-                    function (cont, next) {
-                        User.count({registrationDate: {$gte: date, $lt: limitDate}, 'location.continent_code': cont},
-                            function (err, userCount) {
-                                if (err) return next(err);
 
-                                result[cont] = userCount;
-                                if (userFilter === 'new') return next();
+            async.each(
+                Object.keys(result),
+                function (cont, next) {
+                    User.count({registrationDate: {$gte: date, $lt: limitDate}, 'location.continent_code': cont},
+                        function (err, userCount) {
+                            if (err) return next(err);
 
-                                User.count({registrationDate: {$lt: date}, 'location.continent_code': cont},
-                                    function (err, userBaseCount) {
-                                        if (err) return next(err);
+                            result[cont] = userCount;
+                            if (userFilter === 'new') return next();
 
-                                        result[cont] += userBaseCount;
-                                        next();
-                                    });
-                            });
-                    }, callback);
-            })(function (err) {
-                if (err) return done(err);
+                            User.count({registrationDate: {$lt: date}, 'location.continent_code': cont},
+                                function (err, userBaseCount) {
+                                    if (err) return next(err);
 
-                var res = Utils.continents
-                    .map(function (continent) {
-                        return {
-                            name: continent.name,
-                            value: result[continent.iso]
-                        };
-                    });
-                done(null, res);
-            });
+                                    result[cont] += userBaseCount;
+                                    next();
+                                });
+                        });
+                },
+                function (err) {
+                    if (err) return done(err);
+
+                    var res = Utils.continents
+                        .map(function (continent) {
+                            return {
+                                name: continent.name,
+                                value: result[continent.iso]
+                            };
+                        });
+                    done(null, res);
+                });
         },
         'users_time_plan': function (metrics, done) {
             var userFilter = metrics[0].filter,
@@ -390,7 +390,7 @@ var Utils = {
                             .exec(function (err, data) {
                                 if (err) return next(err);
 
-                                plans[planId].value = data.length
+                                plans[planId].value = data.length;
 
                                 if (userFilter === 'new') return next();
 
@@ -408,8 +408,10 @@ var Utils = {
                         if (err) return done(err);
 
                         var result = [];
-                        for (var prop in plans) {
-                            result.push(plans[prop]);
+                        for (var planKey in plans) {
+                            if (plans.hasOwnProperty(planKey)) {
+                                result.push(plans[planKey]);
+                            }
                         }
 
                         done(null, result);
@@ -417,17 +419,19 @@ var Utils = {
             });
         },
         'plans_plan_location': function (metrics, done) {
-            var usageFilter = metrics[0].filter,
-                planFilter = metrics[1].filter;
+            var usageKey = (metrics[0].filter === 'storage')
+                ? 'storage'
+                : 'share';
+            var planFilter = metrics[1].filter;
 
             var query = {},
                 result = {
-                    'AF': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
-                    'AS': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
-                    'OC': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
-                    'EU': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
-                    'NA': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0},
-                    'SA': {usedStorage: 0, usedShare: 0, totalStorage: 0, totalShare: 0}
+                    'AF': {used: 0, total: 0},
+                    'AS': {used: 0, total: 0},
+                    'OC': {used: 0, total: 0},
+                    'EU': {used: 0, total: 0},
+                    'NA': {used: 0, total: 0},
+                    'SA': {used: 0, total: 0}
                 };
 
             if (planFilter === 'all paying')
@@ -450,19 +454,21 @@ var Utils = {
                                 if (err) return next(err);
 
                                 for (var key in result) {
-                                    var continentPlans = userPlans
-                                        .filter(function (userPlan) {
-                                            return userPlan.user && userPlan.user.location &&
-                                                userPlan.user.location.continent_code === key;
-                                        });
+                                    if (result.hasOwnProperty(key)) {
+                                        var continentPlans = userPlans
+                                            .filter(function (userPlan) {
+                                                return userPlan.user && userPlan.user.location &&
+                                                    userPlan.user.location.continent_code === key;
+                                            });
 
-                                    result[key].totalStorage += (plan.storage * continentPlans.length);
-                                    result[key].totalShare += (plan.sharedQuota * continentPlans.length);
+                                        result[key].total = (usageKey === 'storage')
+                                            ? (plan.storage * continentPlans.length)
+                                            : (plan.sharedQuota * continentPlans.length);
 
-                                    for (var i = 0, len = continentPlans.length; i < len; i++) {
-                                        var continentPlan = continentPlans[i];
-                                        result[key].usedStorage += Math.round(Utils.bytesToMb(continentPlan.usage.storage));
-                                        result[key].usedShare += Math.round(Utils.bytesToMb(continentPlan.usage.share));
+                                        for (var i = 0, len = continentPlans.length; i < len; i++) {
+                                            var continentPlan = continentPlans[i];
+                                            result[key].used += Math.round(Utils.bytesToMb(continentPlan.usage[usageKey]));
+                                        }
                                     }
                                 }
                                 next();
@@ -473,21 +479,163 @@ var Utils = {
 
                         var res = Utils.continents
                             .map(function (continent) {
-                                var contData = result[continent.iso],
-                                    storagePercent = Math.round((contData.usedStorage / contData.totalStorage) * 100),
-                                    sharePercent = Math.round((contData.usedShare / contData.totalShare) * 100);
+                                var contData = result[continent.iso];
 
-                                var contObj = {name: continent.name};
-                                if (usageFilter === 'storage' || usageFilter === 'shared quota') {
-                                    contObj.value = (usageFilter === 'storage')
-                                        ? storagePercent
-                                        : sharePercent
-                                } else {
-                                    contObj.storage = storagePercent;
-                                    contObj.share = sharePercent;
+                                return {
+                                    name: continent.name,
+                                    value: Math.round((contData.used / contData.total) * 100)
                                 }
+                            });
+                        done(null, res);
+                    });
+            });
+        },
+        'plans_location_plan': function (metrics, done) {
+            var usageKey = (metrics[0].filter === 'storage')
+                ? 'storage'
+                : 'share';
+            var locationFilter = metrics[1].filter;
 
-                                return contObj;
+            Plan.getAllPlansHash(function (err, planHash) {
+                if (err) return done(err);
+
+                var plans = planHash;
+                User.find({'location.continent_code': locationFilter})
+                    .populate('currentPlan')
+                    .exec(function (err, users) {
+                        if (err) return done(err);
+
+                        for (var i = 0, len = users.length; i < len; i++) {
+                            var user = users[i],
+                                plan = plans[user.currentPlan.plan];
+                            plan.total += plan[usageKey];
+                            plan.used += Math.round(Utils.bytesToMb(user.currentPlan.usage[usageKey]));
+                        }
+
+                        var result = [];
+                        for (var planKey in plans) {
+                            if (plans.hasOwnProperty(planKey)) {
+                                result.push({
+                                    name: plans[planKey].name,
+                                    value: Math.round((plans[planKey].used / plans[planKey].total) * 100)
+                                });
+                            }
+                        }
+
+                        done(null, result);
+                    });
+            });
+        },
+        'plans_time_plan': function (metrics, done) {
+            var usageKey = (metrics[0].filter === 'storage')
+                ? 'storage'
+                : 'share';
+            var yearFilter = metrics[1].filter,
+                date = new Date(yearFilter, 0, 1),
+                limitDate = new Date(yearFilter + 1, 0, 1);
+
+            Plan.getAllPlansHash(function (err, planHash) {
+                if (err) return done(err);
+
+                var plans = planHash;
+
+                async.each(
+                    Object.keys(plans),
+                    function (planId, next) {
+                        UserPlan.find({billingDate: {$gte: date, $lt: limitDate}, plan: planId})
+                            .distinct('user')
+                            .exec(function (err, data) {
+                                if (err) return next(err);
+
+                                var plan = plans[planId];
+                                plan.total = (usageKey === 'storage')
+                                    ? (plan.storage * data.length)
+                                    : (plan.share * data.length);
+
+                                for (var i = 0, len = data.length; i < len; i++) {
+                                    plan.used += Math.round(Utils.bytesToMb(data[i].usage[usageKey]));
+                                }
+                                next();
+                            });
+                    },
+                    function (err) {
+                        if (err) return done(err);
+
+                        var result = [];
+                        for (var planKey in plans) {
+                            if (plans.hasOwnProperty(planKey)) {
+                                result.push({
+                                    name: plans[planKey].name,
+                                    value: Math.round((plans[planKey].used / plans[planKey].total) * 100)
+                                });
+                            }
+                        }
+
+                        done(null, result);
+                    });
+            });
+        },
+        'plans_time_location': function (metrics, done) {
+            var usageKey = (metrics[0].filter === 'storage')
+                ? 'storage'
+                : 'share';
+            var yearFilter = metrics[1].filter,
+                date = new Date(yearFilter, 0, 1),
+                limitDate = new Date(yearFilter + 1, 0, 1);
+
+            var query = {},
+                result = {
+                    'AF': {used: 0, total: 0},
+                    'AS': {used: 0, total: 0},
+                    'OC': {used: 0, total: 0},
+                    'EU': {used: 0, total: 0},
+                    'NA': {used: 0, total: 0},
+                    'SA': {used: 0, total: 0}
+                };
+
+            Plan.find(query, function (err, plans) {
+                if (err) return done(err);
+                if (!plans.length) return done(new Error('No plan found'));
+
+                async.each(
+                    plans,
+                    function (plan, next) {
+                        UserPlan.find({active: true, billingDate: {$gte: date, $lt: limitDate}, plan: plan._id})
+                            .populate('user')
+                            .exec(function (err, userPlans) {
+                                if (err) return next(err);
+
+                                for (var key in result) {
+                                    if (result.hasOwnProperty(key)) {
+                                        var continentPlans = userPlans
+                                            .filter(function (userPlan) {
+                                                return userPlan.user && userPlan.user.location &&
+                                                    userPlan.user.location.continent_code === key;
+                                            });
+
+                                        result[key].total += (usageKey === 'storage')
+                                            ? (plan.storage * continentPlans.length)
+                                            : (plan.sharedQuota * continentPlans.length);
+
+                                        for (var i = 0, len = continentPlans.length; i < len; i++) {
+                                            var continentPlan = continentPlans[i];
+                                            result[key].used += Math.round(Utils.bytesToMb(continentPlan.usage[usageKey]));
+                                        }
+                                    }
+                                }
+                                next();
+                            });
+                    },
+                    function (err) {
+                        if (err) return done(err);
+
+                        var res = Utils.continents
+                            .map(function (continent) {
+                                var contData = result[continent.iso];
+                                return {
+                                    name: continent.name,
+                                    value: Math.round((contData.used / contData.total) * 100)
+                                }
                             });
                         done(null, res);
                     });
