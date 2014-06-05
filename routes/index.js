@@ -32,9 +32,7 @@ router.post('/dynamic', function (req, res) {
     utils.getQueryResult(metrics, function (err, result) {
         if (err) return res.send(500);
 
-        res.send(200, {
-            data: result
-        });
+        res.send(200, result);
     });
 });
 

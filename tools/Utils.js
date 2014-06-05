@@ -129,7 +129,13 @@ var Utils = {
         var queryLabel = [metrics[0].prop, metrics[1].prop, metrics[2].prop]
             .join('_');
 
-        this.reportQueries[queryLabel](metrics, callback);
+        this.reportQueries[queryLabel](metrics, function (err, results) {
+            var res = {data: results};
+            if (metrics[2].prop === 'time')
+                res.year = metrics[2].filter;
+
+            callback(err, res);
+        });
     },
     /**
      *
