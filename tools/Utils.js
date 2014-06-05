@@ -132,6 +132,7 @@ var Utils = {
         this.reportQueries[queryLabel](metrics, callback);
     },
     /**
+     *
      *  Report Queries
      *
      */
@@ -487,6 +488,74 @@ var Utils = {
                                 }
                             });
                         done(null, res);
+                    });
+            });
+        },
+        'plans_plan_time': function (metrics, done) {
+            var usageKey = (metrics[0].filter === 'storage')
+                ? 'storage'
+                : 'share';
+            var planFilter = metrics[1].filter,
+                yearFilter = metrics[2].filter,
+                date = new Date(yearFilter, 0, 1),
+                limitDate = new Date(yearFilter + 1, 0, 1),
+                query = {},
+                res = [];
+
+            if (planFilter === 'all paying')
+                query.price = {$gt: 0};
+            else if (planFilter === 'all free')
+                query.price = 0;
+            else
+                query._id = planFilter;
+
+            Plan.find(query, function (err, plans) {
+                if (err) return done(err);
+
+                async.each(
+                    plans,
+                    function (plan, next) {
+                        UserPlan.aggregate([
+                            { $match: {
+                                billingDate: {$gte: date, $lt: limitDate},
+                                plan: plan._id,
+                                active: true
+                            }},
+                            { $group: {
+                                _id: {year: {$year: '$billingDate'}, month: {$month: '$billingDate'}},
+                                count: {$sum: 1},
+                                total: {$sum: (usageKey === 'storage') ? plan.storage : plan.sharedQuota},
+                                used: {$sum: (usageKey === 'storage') ? '$usage.storage' : '$usage.share'}}
+                            }],
+                            function (err, results) {
+                                if (err) return next(err);
+
+                                for (var i = 0, len = results.length; i < len; i++) {
+                                    var monthData = results[i];
+                                    if (typeof res[monthData._id.month] === 'undefined') {
+                                        res[monthData._id.month] = monthData;
+                                    } else {
+                                        res[monthData._id.month].used += monthData.used;
+                                        res[monthData._id.month].total += monthData.total;
+                                    }
+                                }
+                                next();
+                            });
+                    },
+                    function (err) {
+                        if (err) return done(err);
+
+                        var result = [];
+                        for (var i = 0; i < 12; i++) {
+                            result.push({
+                                name: Utils.months[i],
+                                value: (typeof res[i + 1] === 'undefined')
+                                    ? 0
+                                    : Math.round((Utils.bytesToMb(res[i + 1].used) / res[i + 1].total) * 100)
+                            });
+                        }
+
+                        done(null, result);
                     });
             });
         },
