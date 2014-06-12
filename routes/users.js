@@ -25,7 +25,7 @@ router.get('/new/:nMonth?', mw.parseLimitDate, function(req, res) {
 });
 
 router.get('/total/:nMonth?', mw.parseLimitDate, function (req, res) {
-    User.count({registrationDate: {$lt: req.limitDate}})
+    User.count({deleted: false, registrationDate: {$lt: req.limitDate}})
         .exec(function (err, userCount) {
             if (err) return res.send(500);
 

@@ -1,0 +1,155 @@
+{
+    "data": [
+        {
+            "name": "/location",
+            "methods": [
+              {
+	            "MethodName": "Get all location",
+	          	"Synopsis": "Returns all continents",
+	          	"HTTPMethod": "GET",
+	          	"URI": "",
+	          	"RequiresOAuth": "Y"
+	          }
+            ]
+        },
+        {
+            "name": "/dynamic",
+            "methods": [
+              {
+	            "MethodName": "Get a report request",
+	          	"Synopsis": "Returns data depending on the three parameters",
+	          	"HTTPMethod": "POST",
+	          	"URI": "",
+	          	"RequiresOAuth": "Y",
+	          	"parameters": [
+	          		{
+	          			"Name": "Metrics",
+				        "Description": "https://github.com/klacabane/cubbyhole_dashboardApi/issues/16",
+		         		"Required": "Y",
+				        "Type": "Objects"
+	          		}
+	          	]
+	          }
+            ]
+        },
+        {
+            "name": "/plans",
+            "methods": [
+              {
+	            "MethodName": "Get users for each plan",
+	          	"Synopsis": "Returns the number of users for each plans grouped by Free/Paying",
+	          	"HTTPMethod": "GET",
+	          	"URI": "/users",
+	          	"RequiresOAuth": "Y"
+          	  },
+          	  {
+          	  	"MethodName": "Get years",
+	          	"Synopsis": "Returns all years for which we have stats",
+	          	"HTTPMethod": "GET",
+	          	"URI": "/years",
+	          	"RequiresOAuth": "Y"
+          	  },
+          	  {
+          	  	"MethodName": "Get plans usage",
+	          	"Synopsis": "Returns (in %) the usage for each plan",
+	          	"HTTPMethod": "GET",
+	          	"URI": "/usage/{nMonth}",
+	          	"RequiresOAuth": "Y",
+	          	"parameters": [
+	          	  {
+          			"Name": "nMonth",
+			        "Description": "Number of month for which we want stats",
+	         		"Required": "N, Defaults to 12",
+			        "Type": "int"
+          		  }
+	          	]
+          	  },
+          	  {
+          	  	"MethodName": "Get plans distribution",
+	          	"Synopsis": "Returns each plans users distribution",
+	          	"HTTPMethod": "GET",
+	          	"URI": "/distribution/{nMonth}",
+	          	"RequiresOAuth": "Y",
+	          	"parameters": [
+	          	  {
+          			"Name": "nMonth",
+			        "Description": "Number of month for which we want stats",
+	         		"Required": "N, Defaults to 12",
+			        "Type": "int"
+          		  }
+	          	]
+          	  }
+            ]
+        },
+        {
+            "name": "/users",
+            "methods": [
+              {
+          	  	"MethodName": "Get new users",
+	          	"Synopsis": "Returns number of new users for n (parameter) months",
+	          	"HTTPMethod": "GET",
+	          	"URI": "/new/{nMonth}",
+	          	"RequiresOAuth": "Y",
+	          	"parameters": [
+	          	  {
+          			"Name": "nMonth",
+			        "Description": "Number of month for which we want stats, can be 'today'",
+	         		"Required": "N, Defaults to 12",
+			        "Type": "int or string"
+          		  }
+	          	]
+          	  },
+          	  {
+          	  	"MethodName": "Get total users",
+	          	"Synopsis": "Returns number of total users for n (parameter) months",
+	          	"HTTPMethod": "GET",
+	          	"URI": "/total/{nMonth}",
+	          	"RequiresOAuth": "Y",
+	          	"parameters": [
+	          	  {
+          			"Name": "nMonth",
+			        "Description": "Number of month for which we want stats, can be 'today'",
+	         		"Required": "N, Defaults to 12",
+			        "Type": "int or string"
+          		  }
+	          	]
+          	  },
+          	  {
+          	  	"MethodName": "Get users per location",
+	          	"Synopsis": "Returns number of users per continent",
+	          	"HTTPMethod": "GET",
+	          	"URI": "/location",
+	          	"RequiresOAuth": "Y"
+          	  },
+          	  {
+          	  	"MethodName": "Get users delay",
+	          	"Synopsis": "Returns necessary delays for users to become Paying",
+	          	"HTTPMethod": "GET",
+	          	"URI": "/delay",
+	          	"RequiresOAuth": "Y"
+          	  },
+          	  {
+          	  	"MethodName": "Get users by type",
+	          	"Synopsis": "Returns number of Free or Paying users for n (parameter) months",
+	          	"HTTPMethod": "GET",
+	          	"URI": "/{type}/{nMonth}",
+	          	"RequiresOAuth": "Y",
+	          	"parameters": [
+	          	  {
+          			"Name": "type",
+			        "Description": "Free or Paying",
+	         		"Required": "Y",
+			        "Type": "string"
+          		  },
+          		  {
+          			"Name": "nMonth",
+			        "Description": "Number of month for which we want stats, can be 'today'",
+	         		"Required": "N, Defaults to 12",
+			        "Type": "int or string"
+          		  }
+	          	]
+          	  }
+            ]
+        }
+    ]
+}

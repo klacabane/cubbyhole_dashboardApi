@@ -12,6 +12,7 @@ var userSchema = new mongoose.Schema({
     lastBillingDate: {type: Date},
     currentPlan: {type: mongoose.Schema.Types.ObjectId, ref: 'UserPlan'},
     verified: {type: Boolean, default: false},
+    deleted: {type: Boolean, default: false},
     isAdmin: Boolean,
     isAllowed: {type: Boolean, default: true},
     location: mongoose.Schema.Types.Mixed

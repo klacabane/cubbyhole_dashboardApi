@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var utils = require('../tools/Utils');
+var fs = require('fs');
 
 var User = require('../models/User'),
     Plan = require('../models/Plan');
@@ -8,6 +9,14 @@ var User = require('../models/User'),
 /** GET */
 router.get('/', function(req, res) {
   res.render('index');
+});
+
+router.get('/documentation', function (req, res) {
+    fs.readFile('./routes/endpoints.json', 'utf-8', function (err, endpoints) {
+        if (err) return res.send(500);
+
+        res.send(200, JSON.parse(endpoints));
+    });
 });
 
 router.get('/location', function (req, res) {
