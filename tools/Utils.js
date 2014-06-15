@@ -601,6 +601,9 @@ var Utils = {
                     });
             });
         },
+        'plans_location_time': function (metrics, done) {
+            done(null, {});
+        },
         'plans_time_plan': function (metrics, done) {
             var usageKey = (metrics[0].filter === 'storage')
                 ? 'storage'
