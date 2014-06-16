@@ -602,7 +602,15 @@ var Utils = {
             });
         },
         'plans_location_time': function (metrics, done) {
-            done(null, {});
+            var result = [];
+            for (var i = 0; i < 12; i++) {
+                result.push({
+                    name: Utils.months[i],
+                    value: Math.floor(Math.random() * 100) + 20
+                })
+            }
+
+            done(null, result);
         },
         'plans_time_plan': function (metrics, done) {
             var usageKey = (metrics[0].filter === 'storage')
