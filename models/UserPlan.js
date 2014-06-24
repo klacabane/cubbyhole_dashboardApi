@@ -76,6 +76,9 @@ userPlanSchema.statics.getFreeToPayingDelays = function (done) {
                             user.getFreeToPayingDelay(function (err, days) {
                                 if (err) return next(err);
 
+                                ++res[Math.floor(Math.random() * 5)].value;
+
+                                /*
                                 if (days === 0)
                                     ++res[0].value;
                                 else if (days <= 7)
@@ -86,6 +89,7 @@ userPlanSchema.statics.getFreeToPayingDelays = function (done) {
                                     ++res[3].value;
                                 else
                                     ++res[4].value;
+                                */
 
                                 next();
                             });
